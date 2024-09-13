@@ -1,0 +1,66 @@
+name: Run autotests
+on:
+  workflow_dispatch:
+    inputs:
+      deployment_target:
+        type: choice
+        description: select 
+        required: true
+        default: all
+        options:
+          - create_account
+          - eco_findly
+          - sale_pages
+          - all
+
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+@@ -30,14 +35,17 @@ jobs:
+      - name: Run all tests
+        if: "github.event.inputs.deployment_target == 'all'"
+        run: cd pw_tests_tuman && pytest -v --alluredir=allure-results
+        continue-on-error: true
+      - name: Run create_account tests
+        if: "github.event.inputs.deployment_target == 'create_account'"
+        run: cd pw_tests_tuman && pytest -v -m create_account --alluredir=allure-results
+        continue-on-error: true
+        name: Run sale_pages tests
+        if: "github.event.inputs.deployment_target == 'sale_pages'"
+        run: cd pw_tests_tuman && pytest -v -m sale_pages --alluredir=allure-results
+        continue-on-error: true
+      - name: Run eco_findly tests
+        if: "github.event.inputs.deployment_target == 'eco_findly'"
+        run: |
+          cd pw_tests_tuman &&
+          pytest -v -m eco_findly --alluredir=allure-results
+        continue-on-error: true
+      - name: Install Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'microsoft'
+          java-version: '17'
+      - name: Install Allure
+        run: |
+          sudo wget https://github.com/allure-framework/allure2/releases/download/2.30.0/allure-2.30.0.tgz && 
+          sudo tar -zxvf allure-2.30.0.tgz -C /opt/ &&
+          sudo ln -s /opt/allure-2.30.0/bin/allure /usr/bin/allure
+      - name: Generate report
+        run: allure generate -c pw_tests_tuman/allure-results -o _site
+      - name: save report as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: _site
+          path: _site
+          retention-days: 2
+        
+      
+  publish-report:
+    name: Report publication
+    runs-on: ubuntu-latest
