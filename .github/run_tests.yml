@@ -22,7 +22,16 @@ permissions:
 jobs:
   run-tests:
     runs-on: ubuntu-latest
-@@ -30,14 +35,17 @@ jobs:
+    name: Tests
+    steps:
+      - name: Check out source repository
+        uses: actions/checkout@v3
+      - name: Set up Python environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: install dependencies
+        run: pip install -r requirements.txt
       - name: Run all tests
         if: "github.event.inputs.deployment_target == 'all'"
         run: cd pw_tests_tuman && pytest -v --alluredir=allure-results
@@ -31,15 +40,17 @@ jobs:
         if: "github.event.inputs.deployment_target == 'create_account'"
         run: cd pw_tests_tuman && pytest -v -m create_account --alluredir=allure-results
         continue-on-error: true
-        name: Run sale_pages tests
-        if: "github.event.inputs.deployment_target == 'sale_pages'"
-        run: cd pw_tests_tuman && pytest -v -m sale_pages --alluredir=allure-results
-        continue-on-error: true
       - name: Run eco_findly tests
         if: "github.event.inputs.deployment_target == 'eco_findly'"
         run: |
           cd pw_tests_tuman &&
           pytest -v -m eco_findly --alluredir=allure-results
+        continue-on-error: true
+      - name: Run sale_pages tests
+        if: "github.event.inputs.deployment_target == 'sale_pages'"
+        run: |
+          cd pw_tests_tuman &&
+          pytest -v -m sale_pages --alluredir=allure-results
         continue-on-error: true
       - name: Install Java
         uses: actions/setup-java@v4
@@ -52,7 +63,7 @@ jobs:
           sudo tar -zxvf allure-2.30.0.tgz -C /opt/ &&
           sudo ln -s /opt/allure-2.30.0/bin/allure /usr/bin/allure
       - name: Generate report
-        run: allure generate -c pw_tests_tuman/allure-results -o _site
+        run: allure generate -c ui_tests_eokulik/allure-results -o _site
       - name: save report as artifact
         uses: actions/upload-artifact@v4
         with:
@@ -64,3 +75,12 @@ jobs:
   publish-report:
     name: Report publication
     runs-on: ubuntu-latest
+    needs: run-tests
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
