@@ -32,6 +32,10 @@ jobs:
           python-version: "3.10"
       - name: install dependencies
         run: pip install -r requirements.txt
+      - name: Install dependencies
+        run: |
+          pip install playwright
+          playwright install chromium
       - name: Run all tests
         if: "github.event.inputs.deployment_target == 'all'"
         run: cd pw_tests_tuman && pytest -v --alluredir=allure-results
